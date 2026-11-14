@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RRR1 | Tutor de Matemáticas, Física y Química</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#071827;color:#eaf6ff}*{box-sizing:border-box}body{margin:0;padding:18px}main{max-width:850px;margin:auto}header{display:flex;gap:14px;align-items:center;margin:14px 0 20px}.mark{display:grid;place-items:center;width:56px;height:56px;border-radius:17px;background:#1a455e;font-size:30px}h1{font-size:1.6rem;margin:0}small,.hint{color:#bad0dc}.card{background:#112b41;border:1px solid #315572;border-radius:17px;padding:20px;margin-bottom:14px}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.spread{justify-content:space-between}button{border:0;border-radius:10px;background:#30d6b3;color:#082825;font-weight:750;padding:12px 15px;cursor:pointer}button.alt{background:#315975;color:#fff}button:disabled{opacity:.55;cursor:not-allowed}input[type=text],input[type=password]{min-width:0;width:100%;border:1px solid #567e98;border-radius:10px;background:#071c2b;color:white;padding:13px;font:inherit}form{display:flex;gap:8px}form input{flex:1}#chat{height:min(51vh,410px);min-height:250px;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:12px 1px}.bubble{max-width:88%;padding:12px 15px;line-height:1.5;white-space:pre-wrap;border-radius:15px}.bot{align-self:flex-start;background:#245069}.user{align-self:flex-end;background:#236454}.status{background:#163d53;padding:10px 12px;border-radius:10px;margin:12px 0;font-size:.92rem}.hidden{display:none!important}label{display:flex;align-items:center;gap:8px}.minor{font-size:.84rem;color:#b9d1df}a{color:#80e2d0}@media(max-width:500px){body{padding:10px}.card{padding:14px}form{flex-direction:column}form button{width:100%}}
+</style>
+</head>
+<body><main>
+<header><div class="mark">🎓</div><div><h1>RRR1 — Tutor inteligente</h1><small>Matemáticas · Física · Química | Academia virtual — prueba piloto</small></div></header>
+<section class="card" id="accessPanel">
+<h2 style="margin-top:0;font-size:1.1rem">Acceso al piloto</h2>
+<p class="hint">Si recibiste un código de la academia, escríbelo. Si estás probando RRR1 en la computadora del profesor y no se configuraron códigos, pulsa «Entrar».</p>
+<form id="accessForm"><input id="pilotCode" type="password" autocomplete="off" placeholder="Código de acceso (cuando se requiera)" aria-label="Código de acceso"><button>Entrar</button></form>
+<p id="accessNotice" role="status" class="minor"></p>
+</section>
+<section class="card hidden" id="tutorPanel">
+<div class="row spread"><strong>Tu conversación con RRR1</strong><button class="alt" id="newChat" type="button">↻ Nueva conversación</button></div>
+<p class="hint">Puedes hablar o escribir. RRR1 dará explicaciones breves y hará una pregunta a la vez.</p>
+<div id="chat" role="log" aria-live="polite" aria-label="Conversación"><div class="bubble bot">¡Bienvenido! Pulsa «Comenzar» y me presentaré.</div></div>
+<div class="status" id="status" role="status">Listo para comenzar.</div>
+<div class="row"><button id="start" type="button">▶ Comenzar</button><button class="alt" id="mic" type="button">🎤 Dictar pregunta</button><button class="alt" id="stop" type="button">🔇 Silenciar</button></div>
+<form id="chatForm" style="margin-top:12px"><input id="message" type="text" maxlength="1500" placeholder="Escribe tu mensaje..." autocomplete="off" aria-label="Mensaje al tutor"><button id="send">Enviar</button></form>
+<p class="minor">El dictado utiliza la función de reconocimiento de voz del navegador, si está disponible; revisa el texto antes de enviarlo. Algunas implementaciones pueden procesar la voz en servicios externos.</p>
+<label class="minor"><input id="tts" type="checkbox" checked> Leer las respuestas en voz alta</label>
+<p class="minor">RRR1 es un apoyo educativo independiente. No sustituye a un docente ni emite certificados oficiales. Evita compartir contraseñas o datos personales sensibles.</p>
+</section>
+</main>
+<script>
+'use strict';
+const $=x=>document.getElementById(x);
+let sessionId=null, busy=false, started=false, accessCode='';
+const chat=$('chat');
+function note(t){$('status').textContent=t;}
+function bubble(t,who='bot') {const e=document.createElement('div');e.className='bubble '+who;e.textContent=(who==='bot'?'RRR1: ':'Tú: ')+t;chat.append(e);chat.scrollTop=chat.scrollHeight;}
+function speechVoice(){const voices=window.speechSynthesis?.getVoices()||[];return voices.find(v=>v.lang.toLowerCase()==='es-mx')||voices.find(v=>v.lang.toLowerCase().startsWith('es'))||null;}
+function speak(t){if(!$('tts').checked||!('speechSynthesis' in window))return;speechSynthesis.cancel();const utter=new SpeechSynthesisUtterance(t);utter.lang='es-MX';utter.rate=.96;const v=speechVoice();if(v)utter.voice=v;speechSynthesis.speak(utter);}
+function wait(value){busy=value;for(const id of ['start','mic','send','newChat'])$(id).disabled=value;note(value?'RRR1 está preparando su respuesta…':'Puedes hablar o escribir.');}
+async function sendMessage(text){if(busy)return;const msg=text.trim();if(!msg)return;if(!started){started=true;$('start').textContent='🔊 Repetir respuesta';}bubble(msg,'user');$('message').value='';wait(true);
+try{const response=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json','X-Pilot-Code':accessCode},body:JSON.stringify({sessionId,message:msg})});const data=await response.json();if(!response.ok)throw new Error(data.error||'No fue posible conectar con el tutor.');sessionId=data.sessionId;bubble(data.reply);speak(data.reply);$('start').textContent='🔊 Repetir respuesta';}catch(error){bubble('Aviso técnico: '+error.message);note('Revisa el servidor o tu código de acceso.');}finally{wait(false);$('message').focus();}}
+$('accessForm').onsubmit=async e=>{e.preventDefault();accessCode=$('pilotCode').value.trim();$('accessNotice').textContent='Verificando acceso…';try{const r=await fetch('/access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:accessCode})});const j=await r.json();if(!r.ok)throw new Error(j.error||'No se pudo validar el acceso');$('accessPanel').classList.add('hidden');$('tutorPanel').classList.remove('hidden');$('accessNotice').textContent='';$('start').focus();}catch(err){$('accessNotice').textContent=err.message;}};
+$('start').onclick=()=>{if(!started){chat.textContent='';sendMessage('Hola RRR1');}else{const messages=[...chat.querySelectorAll('.bot')];if(messages.length)speak(messages.at(-1).textContent.replace(/^RRR1: /,''));}};
+$('newChat').onclick=()=>{if('speechSynthesis' in window)speechSynthesis.cancel();sessionId=null;started=false;chat.innerHTML='';bubble('¡Bienvenido! Pulsa «Comenzar» y me presentaré.');$('start').textContent='▶ Comenzar';note('Conversación nueva.');};
+$('stop').onclick=()=>{if('speechSynthesis' in window)speechSynthesis.cancel();note('Audio detenido.');};
+$('chatForm').onsubmit=e=>{e.preventDefault();sendMessage($('message').value);};
+const Speech=window.SpeechRecognition||window.webkitSpeechRecognition;
+if(Speech){const rec=new Speech();rec.lang='es-MX';rec.interimResults=false;rec.continuous=false;rec.onstart=()=>note('Escuchando…');rec.onresult=e=>{$('message').value=e.results[0][0].transcript;note('Dictado listo. Revísalo y pulsa Enviar.');$('message').focus();};rec.onerror=e=>note('No se pudo reconocer la voz ('+e.error+'). Puedes escribir.');$('mic').onclick=()=>{if('speechSynthesis'in window)speechSynthesis.cancel();try{rec.start();}catch{note('Espera un momento antes de volver a usar el micrófono.');}};}else{$('mic').disabled=true;$('mic').title='El navegador no admite dictado';}
+</script></body></html>

@@ -1,0 +1,86 @@
+RRR1 — PILOTO PARA ESTUDIANTES
+================================
+
+Contenido
+---------
+index.html    Interfaz renovada: voz, texto, saludo, materias y nueva conversación.
+server.mjs    Servidor Node.js y API de OpenAI con control básico de acceso.
+package.json  Configuración para iniciar Node.js y publicar el proyecto.
+
+IMPORTANTE: No cambies tu versión de RRR1 que ya funciona. Utiliza esta
+carpeta como una copia separada.
+
+A. PRUEBA EN TU PROPIA COMPUTADORA (Windows)
+-------------------------------------------
+1. Descomprime el ZIP en una carpeta, por ejemplo:
+   C:\RRR1_Piloto_Estudiantes
+2. Abre CMD y entra a esa carpeta:
+   cd /d "C:\RRR1_Piloto_Estudiantes"
+3. Comprueba que la clave OPENAI_API_KEY esté disponible en esa MISMA CMD:
+   if defined OPENAI_API_KEY (echo CLAVE CONFIGURADA) else (echo FALTA CLAVE)
+   Si falta, configúrala de forma privada; NO la coloques en HTML o GitHub.
+4. Inicia:
+   node server.mjs
+   o npm start
+5. Abre http://127.0.0.1:3000 y pulsa Entrar (sin código, solo en local).
+6. Pulsa Comenzar y prueba el saludo.
+7. Mantén abierta la ventana CMD mientras lo uses. Ctrl+C detiene el servidor.
+
+B. PRUEBA CON ESTUDIANTES DESDE SUS CASAS (PUBLICACIÓN)
+------------------------------------------------------
+1. Crea un repositorio PRIVADO nuevo en GitHub con estos cuatro archivos.
+   Nunca subas tu clave API. Comprueba que no haya archivos .env o secretos.
+2. Conecta el repositorio a un servicio de alojamiento para Node.js (por
+   ejemplo, Render). Crea un servicio web con Node y configura:
+   Build command: npm install
+   Start command: npm start
+3. En las variables de entorno del servicio, configura:
+   OPENAI_API_KEY = [tu clave privada válida]
+   HOST           = 0.0.0.0
+   PILOT_CODES    = [cinco códigos largos distintos, separados por comas]
+   DAILY_LIMIT    = 30
+   OPENAI_MODEL   = gpt-4.1-mini   (o un modelo disponible para tu cuenta)
+   PORT: normalmente lo asigna la plataforma automáticamente, no lo fijes
+   si el servicio lo provee.
+4. Despliega el servicio y prueba la URL HTTPS que te proporcione la plataforma.
+5. Envía la URL HTTPS y un código diferente a cada alumno POR SEPARADO.
+   No incluyas la clave API en el mensaje, en el HTML, ni en el código fuente.
+
+Generar cinco códigos aleatorios desde CMD (con Node instalado):
+node -e "for(let i=0;i<5;i++) console.log(require('node:crypto').randomBytes(12).toString('hex'))"
+
+Los códigos son una protección BÁSICA para un piloto reducido; NO equivalen a
+un sistema completo de cuentas y permisos. Tampoco garantizan el control de
+costos: añade límites presupuestales en tu cuenta de la API, verifica
+regularmente los consumos y detén el servicio si aparecen gastos anómalos.
+
+C. INSTRUCCIONES PARA LOS ESTUDIANTES
+------------------------------------
+1. Abre el enlace HTTPS desde Chrome o Edge actualizado.
+2. Introduce el código personal proporcionado por la academia y pulsa Entrar.
+3. Pulsa Comenzar y escribe tu nombre de pila cuando RRR1 te lo pregunte.
+4. Elige Matemáticas, Física o Química.
+5. Escribe tus preguntas o pulsa Dictar pregunta. Si usas micrófono, permite
+   el acceso y revisa lo reconocido antes de pulsar Enviar.
+6. Si tu navegador no ofrece dictado, utiliza el teclado.
+7. Pulsa Nueva conversación para comenzar otra sesión.
+
+D. AVISOS DE SEGURIDAD Y LIMITACIONES
+------------------------------------
+* La voz actual utiliza funciones del navegador: reconocimiento de voz y
+  lectura en voz alta; el servicio de reconocimiento puede depender del
+  navegador y procesar audio fuera del equipo.
+* Esta versión NO guarda calificaciones ni expedientes permanentes; mantiene
+  sesiones y límites en memoria mientras el servidor está encendido.
+  Al reiniciar, se pierden. Para una academia formal necesitaremos base de
+  datos, consentimiento y política de conservación de datos.
+* Los límites diarios se reinician cuando reinicia el servidor y no sustituyen
+  los límites de gasto de la plataforma de API.
+* La protección con códigos es provisional: no uses esta versión para una
+  apertura pública masiva ni recopiles datos sensibles de estudiantes.
+* Si participan menores, consigue las autorizaciones y avisos necesarios
+  antes de usar sus datos y su voz.
+* El piloto debe ser supervisado por un adulto/docente. RRR1 puede equivocarse.
+* No es una escuela ni un servicio oficial del INEA, SEP o CENEVAL.
+* Las actualizaciones de Chrome/Edge, el proveedor de alojamiento y el API
+  pueden afectar el funcionamiento y requieren pruebas con cada dispositivo.
