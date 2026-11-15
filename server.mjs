@@ -9,7 +9,7 @@ const DAILY_LIMIT = Math.min(200, Math.max(1, Number(process.env.DAILY_LIMIT || 
 const usage = new Map();
 const active = new Set();
 if (HOST === '0.0.0.0' && !CODES.length) {
-  console.error('SEGURIDAD: configura PILOT_CODES antes de publicar RRR1.');
+  console.error('SEGURIDAD: configura PILOT_CODES antes de publicar 3RV1.');
   process.exit(1);
 }
 function codeValid(code) {
@@ -57,6 +57,7 @@ function findSubject(message) {
   if (/matem[aá]tica|[aá]lgebra|fracci[oó]n|ecuaci[oó]n|geometr[ií]a/i.test(message)) return 'Matemáticas';
   if (/f[ií]sica|movimiento|fuerza|energ[ií]a|velocidad/i.test(message)) return 'Física';
   if (/qu[ií]mica|[aá]tomo|mol[eé]cula|elemento|reacci[oó]n/i.test(message)) return 'Química';
+  if (/biolog[ií]a|c[eé]lula|gen[eé]tica|ecosistema|organismo|fotos[ií]ntesis/i.test(message)) return 'Biología';
   return '';
 }
 function normalizeName(message) {
@@ -65,7 +66,7 @@ function normalizeName(message) {
   return match ? match[1] : '';
 }
 async function tutorReply(session, student) {
-  const instructions = `Eres RRR1, tutor virtual de Matemáticas, Física y Química para adolescentes y adultos. Hablas en español mexicano, con tono amable, natural y respetuoso. Eres una IA, no una persona. El estudiante se llama ${session.name} y eligió ${session.subject}. No repitas su nombre en cada respuesta.\n\nREGLAS PEDAGÓGICAS: habla normalmente en una o dos frases (idealmente 15 a 40 palabras, máximo 55). Solo una pregunta a la vez, luego espera. Primero averigua qué tema o duda tiene el estudiante y su nivel, sin dar conferencias. Da una pista o un paso pequeño; no resuelvas todo de inmediato. Ajusta el nivel según la respuesta y ofrece ejemplos cotidianos solo si hacen falta. Si se equivoca, corrige con paciencia, sin elogios exagerados. Si pide una explicación completa, puedes darla brevemente y por etapas. Cuando quiera terminar, despídete en una frase. Puedes cambiar de materia cuando el estudiante lo pida. No hagas preguntas personales ni pidas datos sensibles. No afirmes que las calificaciones son oficiales.\n\nDevuelve EXCLUSIVAMENTE JSON con estas claves: reply (texto natural para decir en voz alta) y mastered (boolean). Usa mastered=true solamente cuando haya evidencia de que resolvió y explicó correctamente un ejercicio, no por adivinar o repetir una respuesta. No menciones el JSON.`;
+  const instructions = `Eres 3RV1, tutor virtual de Matemáticas, Física, Química y Biología para adolescentes y adultos. Hablas en español mexicano, con tono amable, natural y respetuoso. Eres una IA, no una persona. El estudiante se llama ${session.name} y eligió ${session.subject}. No repitas su nombre en cada respuesta.\n\nREGLAS PEDAGÓGICAS: habla normalmente en una o dos frases (idealmente 15 a 40 palabras, máximo 55). Solo una pregunta a la vez, luego espera. Primero averigua qué tema o duda tiene el estudiante y su nivel, sin dar conferencias. Da una pista o un paso pequeño; no resuelvas todo de inmediato. Ajusta el nivel según la respuesta y ofrece ejemplos cotidianos solo si hacen falta. Si se equivoca, corrige con paciencia, sin elogios exagerados. Si pide una explicación completa, puedes darla brevemente y por etapas. Cuando quiera terminar, despídete en una frase. Puedes cambiar de materia cuando el estudiante lo pida. No hagas preguntas personales ni pidas datos sensibles. No afirmes que las calificaciones son oficiales.\n\nDevuelve EXCLUSIVAMENTE JSON con estas claves: reply (texto natural para decir en voz alta) y mastered (boolean). Usa mastered=true solamente cuando haya evidencia de que resolvió y explicó correctamente un ejercicio, no por adivinar o repetir una respuesta. No menciones el JSON.`;
   const input = [...session.turns.slice(-MAX_HISTORY), { role: 'user', content: student }];
   let response;
   try {
@@ -94,18 +95,18 @@ async function tutorReply(session, student) {
 async function handleMessage(session, message) {
   if (session.phase === 'greeting') {
     session.phase = 'name';
-    return responseFor(session, '¡Hola! Soy RRR1, tu tutor virtual de Matemáticas, Física y Química. ¡Qué gusto saludarte! ¿Cómo te llamas?');
+    return responseFor(session, '¡Hola! Soy 3RV1, tu tutor virtual de Matemáticas, Física, Química y Biología. ¡Qué gusto saludarte! ¿Cómo te llamas?');
   }
   if (session.phase === 'name') {
     const name = normalizeName(message);
     if (!name) return responseFor(session, '¿Me dices cómo prefieres que te llame? Solo tu nombre está bien.');
     session.name = name;
     session.phase = 'subject';
-    return responseFor(session, `¡Mucho gusto, ${name}! ¿Hoy quieres estudiar Matemáticas, Física o Química?`);
+    return responseFor(session, `¡Mucho gusto, ${name}! ¿Hoy quieres estudiar Matemáticas, Física, Química o Biología?`);
   }
   if (session.phase === 'subject') {
     const subject = findSubject(message);
-    if (!subject) return responseFor(session, 'Perfecto. ¿Elegimos Matemáticas, Física o Química?');
+    if (!subject) return responseFor(session, 'Perfecto. ¿Elegimos Matemáticas, Física, Química o Biología?');
     session.subject = subject;
     session.phase = 'tutoring';
     return responseFor(session, `¡Muy bien! Vamos con ${subject}. ¿Qué tema te gustaría aprender o repasar?`);
@@ -161,4 +162,4 @@ const server = http.createServer(async (req, res) => {
     send(res, err.status || 500, { error: (err.status ? err.message : 'No se pudo completar la solicitud. Revisa la conexión y el servidor.') });
   }
 });
-server.listen(PORT, HOST, () => console.log(`RRR1 disponible en ${HOST}:${PORT}`));
+server.listen(PORT, HOST, () => console.log(`3RV1 disponible en ${HOST}:${PORT}`));
