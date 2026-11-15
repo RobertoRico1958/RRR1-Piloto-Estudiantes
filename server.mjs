@@ -23,7 +23,7 @@ function checkQuota(code) {
   const key = date + ':' + code;
   const u = usage.get(key) || {count:0,times:[]};
   const now = Date.now();u.times=u.times.filter(x=>x>now-60000);
-  if (u.count>=DAILY_LIMIT || u.times.length>=8) { const e=new Error('Límite de uso alcanzado. Intenta más tarde o consulta a tu profesor.');e.status=429;throw e; }
+  if (u.count>=DAILY_LIMIT || u.times.length>=15) { const e=new Error('Límite de uso alcanzado. Intenta más tarde o consulta a tu profesor.');e.status=429;throw e; }
   u.count++;u.times.push(now);usage.set(key,u);
   if(usage.size>2000){for(const k of usage.keys())if(!k.startsWith(date+':'))usage.delete(k);}
 }
