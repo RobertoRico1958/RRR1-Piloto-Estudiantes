@@ -8,7 +8,7 @@
 </style>
 </head>
 <body><main>
-<header><div class="mark">🎓</div><div><h1>3RV1 — Tutor inteligente</h1><small>Matemáticas · Física · Química · Biología | Academia virtual — prueba piloto</small></div></header>
+<header><div class="mark">🎓</div><div><h1>3RV1 — Tutor inteligente</h1><small>Matemáticas · Física · Química · Biología | Academia Virtual Dr. Ernesto Lacomba Zamora</small></div></header>
 <section class="card" id="accessPanel">
 <h2 style="margin-top:0;font-size:1.1rem">Acceso al piloto</h2>
 <p class="hint">Si recibiste un código de la academia, escríbelo. Si estás probando 3RV1 en la computadora del profesor y no se configuraron códigos, pulsa «Entrar».</p>
@@ -36,7 +36,45 @@ const chat=$('chat');
 function note(t){$('status').textContent=t;}
 function bubble(t,who='bot') {const e=document.createElement('div');e.className='bubble '+who;e.textContent=(who==='bot'?'3RV1: ':'Tú: ')+t;chat.append(e);chat.scrollTop=chat.scrollHeight;}
 function speechVoice(){const voices=window.speechSynthesis?.getVoices()||[];return voices.find(v=>v.lang.toLowerCase()==='es-mx')||voices.find(v=>v.lang.toLowerCase().startsWith('es'))||null;}
-function speak(t){if(!$('tts').checked||!('speechSynthesis' in window))return;speechSynthesis.cancel();const utter=new SpeechSynthesisUtterance(t);utter.lang='es-MX';utter.rate=.96;const v=speechVoice();if(v)utter.voice=v;speechSynthesis.speak(utter);}
+// Conversión de notación matemática a lenguaje oral, solo para el sintetizador.
+// No modifica el texto que ve el alumno ni las expresiones enviadas al tutor.
+function mathForSpeech(input){
+  let t=String(input||'');
+  // LaTeX común: \frac{a}{b}, \sqrt{x}, \cdot, \times, \pi.
+  t=t.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g,(_,a,b)=>`${a} dividido entre ${b}`);
+  t=t.replace(/\\sqrt\s*\{([^{}]+)\}/g,(_,a)=>`raíz cuadrada de ${a}`);
+  t=t.replace(/\\(?:cdot|times)\b/g,' multiplicado por ')
+     .replace(/\\pi\b/g,' pi ')
+     .replace(/\\(?:left|right)\b/g,'')
+     .replace(/\\[\[(]|\\[\])]/g,' ')
+     .replace(/\$/g,' ');
+  // Reconocer potencias: x^2, x^{2}, a³, 2⁴, etc.
+  const powerNames={'2':'al cuadrado','3':'al cubo','4':'a la cuarta potencia',
+    '5':'a la quinta potencia','6':'a la sexta potencia','7':'a la séptima potencia',
+    '8':'a la octava potencia','9':'a la novena potencia','0':'a la potencia cero',
+    '1':'a la primera potencia'};
+  t=t.replace(/\^\{?(-?\d+)\}?/g,(_,exp)=>` ${powerNames[exp]||'elevado a '+exp} `);
+  t=t.replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹]+/g,s=>{
+    const m={'⁰':'0','¹':'1','²':'2','³':'3','⁴':'4','⁵':'5','⁶':'6','⁷':'7','⁸':'8','⁹':'9'};
+    const exp=[...s].map(c=>m[c]).join('');
+    return ' '+(powerNames[exp]||'elevado a '+exp)+' ';
+  });
+  // Operadores y raíces.
+  t=t.replace(/√\s*\(([^()]+)\)/g,(_,arg)=>` raíz cuadrada de, abre paréntesis, ${arg}, cierra paréntesis `);
+  t=t.replace(/√\s*([\w.,]+)/g,(_,arg)=>` raíz cuadrada de ${arg} `);
+  t=t.replace(/([\p{L}\d])\s*\*\s*([\p{L}\d])/gu,'$1 multiplicado por $2');
+  t=t.replace(/×/g,' multiplicado por ').replace(/÷/g,' dividido entre ')
+    .replace(/≤/g,' menor o igual que ').replace(/≥/g,' mayor o igual que ')
+    .replace(/≠/g,' diferente de ').replace(/≈/g,' aproximadamente igual a ')
+    .replace(/=/g,' es igual a ').replace(/\+/g,' más ')
+    .replace(/\s-\s/g,' menos ');
+  // x² + 5x -> "equis al cuadrado más cinco equis" (símbolos habituales).
+  t=t.replace(/\bx\b/gi,' equis ').replace(/(?<=\d)x\b/gi,' equis ');
+  // Conservar fracciones ordinarias como lectura de cociente, sin alterar URL en texto.
+  t=t.replace(/\b(\d+)\s*\/\s*(\d+)\b/g,'$1 entre $2');
+  return t.replace(/\s+/g,' ').trim();
+}
+function speak(t){if(!$('tts').checked||!('speechSynthesis' in window))return;speechSynthesis.cancel();const utter=new SpeechSynthesisUtterance(mathForSpeech(t));utter.lang='es-MX';utter.rate=.92;const v=speechVoice();if(v)utter.voice=v;speechSynthesis.speak(utter);}
 function wait(value){busy=value;for(const id of ['start','mic','send','newChat'])$(id).disabled=value;note(value?'3RV1 está preparando su respuesta…':'Puedes hablar o escribir.');}
 async function sendMessage(text){if(busy)return;const msg=text.trim();if(!msg)return;if(!started){started=true;$('start').textContent='🔊 Repetir respuesta';}bubble(msg,'user');$('message').value='';wait(true);
 try{const response=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json','X-Pilot-Code':accessCode},body:JSON.stringify({sessionId,message:msg})});const data=await response.json();if(!response.ok)throw new Error(data.error||'No fue posible conectar con el tutor.');sessionId=data.sessionId;bubble(data.reply);speak(data.reply);$('start').textContent='🔊 Repetir respuesta';}catch(error){bubble('Aviso técnico: '+error.message);note('Revisa el servidor o tu código de acceso.');}finally{wait(false);$('message').focus();}}
