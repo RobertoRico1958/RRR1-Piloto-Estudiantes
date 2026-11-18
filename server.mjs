@@ -128,6 +128,34 @@ const server = http.createServer(async (req, res) => {
       res.end(await readFile(new URL('./index.html', import.meta.url)));
       return;
     }
+    
+    // Biblioteca visual de 3RV1: entregar las cinco imágenes.
+    if (req.method === 'GET' && url.pathname.startsWith('/imagenes/')) {
+      const archivo = url.pathname.slice('/imagenes/'.length);
+      const permitidos = [
+        'fracciones.webp',
+        'parabola.webp',
+        'energia.webp',
+        'atomo.webp',
+        'celula.webp'
+      ];
+
+      if (!permitidos.includes(archivo)) {
+        return send(res, 404, { error: 'Imagen no encontrada' });
+      }
+
+      const contenido = await readFile(
+        new URL('./imagenes/' + archivo, import.meta.url)
+      );
+
+      res.writeHead(200, {
+        'Content-Type': 'image/webp',
+        'Cache-Control': 'public, max-age=3600'
+      });
+      res.end(contenido);
+      return;
+    }
+
     if (req.method === 'GET' && url.pathname === '/health') {
       return send(res, 200, { ok: true });
     }
