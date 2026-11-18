@@ -5,6 +5,16 @@
 <title>3RV1 | Tutor de Matemáticas, Física, Química y Biología</title>
 <style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#071827;color:#eaf6ff}*{box-sizing:border-box}body{margin:0;padding:18px}main{max-width:850px;margin:auto}header{display:flex;gap:14px;align-items:center;margin:14px 0 20px}.mark{display:grid;place-items:center;width:56px;height:56px;border-radius:17px;background:#1a455e;font-size:30px}h1{font-size:1.6rem;margin:0}small,.hint{color:#bad0dc}.card{background:#112b41;border:1px solid #315572;border-radius:17px;padding:20px;margin-bottom:14px}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.spread{justify-content:space-between}button{border:0;border-radius:10px;background:#30d6b3;color:#082825;font-weight:750;padding:12px 15px;cursor:pointer}button.alt{background:#315975;color:#fff}button:disabled{opacity:.55;cursor:not-allowed}input[type=text],input[type=password]{min-width:0;width:100%;border:1px solid #567e98;border-radius:10px;background:#071c2b;color:white;padding:13px;font:inherit}form{display:flex;gap:8px}form input{flex:1}#chat{height:min(51vh,410px);min-height:250px;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:12px 1px}.bubble{max-width:88%;padding:12px 15px;line-height:1.5;white-space:pre-wrap;border-radius:15px}.bot{align-self:flex-start;background:#245069}.user{align-self:flex-end;background:#236454}.status{background:#163d53;padding:10px 12px;border-radius:10px;margin:12px 0;font-size:.92rem}.hidden{display:none!important}label{display:flex;align-items:center;gap:8px}.minor{font-size:.84rem;color:#b9d1df}a{color:#80e2d0}@media(max-width:500px){body{padding:10px}.card{padding:14px}form{flex-direction:column}form button{width:100%}}
+
+/* Biblioteca visual 3RV1: independiente del chat y de la API */
+.visualLibrary{margin-top:14px;border-top:1px solid #315572;padding-top:15px}
+.visualLibrary h3{margin:8px 0;font-size:1.08rem}
+.visualTopics{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.visualTopics button{background:#315975;color:#fff;font-size:.88rem;padding:9px 11px}
+.visualTopics button[aria-pressed="true"]{background:#30d6b3;color:#082825}
+.visualFigure{margin:12px 0 0}.visualFigure img{display:block;width:100%;height:auto;max-height:560px;object-fit:contain;border-radius:12px;background:#f7fbff}
+.visualExplanation{margin:10px 0;line-height:1.55}.visualActions{display:flex;gap:8px;flex-wrap:wrap}
+.visualNotice{color:#bad0dc;font-size:.83rem}
 </style>
 </head>
 <body><main>
@@ -26,6 +36,18 @@
 <p class="minor">El dictado utiliza la función de reconocimiento de voz del navegador, si está disponible; revisa el texto antes de enviarlo. Algunas implementaciones pueden procesar la voz en servicios externos.</p>
 <label class="minor"><input id="tts" type="checkbox" checked> Leer las respuestas en voz alta</label>
 <p class="minor">3RV1 es un apoyo educativo independiente. No sustituye a un docente ni emite certificados oficiales. Evita compartir contraseñas o datos personales sensibles.</p>
+
+<div class="visualLibrary">
+ <div class="row spread"><h3>🖼️ Biblioteca visual de 3RV1</h3><button id="toggleVisual" class="alt" type="button" aria-expanded="false" aria-controls="visualContent">Explícame con una imagen</button></div>
+ <div id="visualContent" class="hidden">
+  <p class="minor">Elige el esquema relacionado con tu tema. Estas ilustraciones están guardadas en nuestra biblioteca; no se generan automáticamente ni consumen consultas adicionales de IA.</p>
+  <div class="visualTopics" id="visualTopics" aria-label="Selecciona un tema visual"></div>
+  <figure class="visualFigure"><img id="visualImage" alt="" loading="lazy"><figcaption id="visualCaption" class="minor"></figcaption></figure>
+  <p class="visualExplanation" id="visualExplanation"></p>
+  <div class="visualActions"><button type="button" class="alt" id="readVisual">🔊 Escuchar explicación</button><button type="button" class="alt" id="questionVisual">💬 Preguntar a 3RV1 sobre esta imagen</button></div>
+  <p class="visualNotice">Los dibujos son recursos didácticos. En el esquema del átomo se presenta un modelo introductorio, no órbitas reales de electrones. Revisa los rótulos antes de usarlos en evaluaciones.</p>
+ </div>
+</div>
 </section>
 </main>
 <script>
@@ -160,4 +182,37 @@ if(Speech){
     try{rec.start();}catch{stopDictation();note('Espera un momento y vuelve a activar el micrófono.');}
   };
 }else{$('mic').disabled=true;$('mic').title='Tu navegador no admite dictado. Usa Chrome o Edge actualizado.';}
+
+// Biblioteca local de ilustraciones; ninguna imagen se envía a OpenAI.
+const visualTopics=[
+ {id:'fracciones',title:'Fracciones',file:'fracciones.webp',caption:'Suma de un medio y un tercio.',explain:'Para sumar un medio y un tercio, buscamos un denominador común: seis. Un medio equivale a tres sextos y un tercio equivale a dos sextos. Tres sextos más dos sextos son cinco sextos.',question:'Explícame con un ejemplo por qué un medio más un tercio es cinco sextos.'},
+ {id:'parabola',title:'Parábola',file:'parabola.webp',caption:'Gráfica calculada de y = x² − 4x − 5.',explain:'Esta parábola se abre hacia arriba. Corta el eje horizontal en menos uno y cinco. Su eje de simetría es equis igual a dos, y su vértice es el punto dos, menos nueve. Observa que el vértice es el punto mínimo.',question:'Explícame cómo calcular el vértice y las raíces de y = x^2 - 4x - 5.'},
+ {id:'energia',title:'Energía',file:'energia.webp',caption:'Transformación de energía potencial en cinética.',explain:'Una pelota elevada tiene energía potencial gravitatoria. Al caer, disminuye su altura y aumenta su rapidez: parte de su energía potencial se transforma en energía cinética. Si despreciamos las pérdidas, la energía mecánica se conserva.',question:'Explícame por qué aumenta la energía cinética de una pelota cuando cae.'},
+ {id:'atomo',title:'Átomo',file:'atomo.webp',caption:'Modelo escolar simplificado de la estructura atómica.',explain:'En el núcleo hay protones positivos y neutrones sin carga. Los electrones tienen carga negativa y se describen mediante regiones de probabilidad llamadas orbitales. Los círculos de esta imagen representan un modelo simplificado de niveles de energía; no trayectorias literales.',question:'Explícame las diferencias entre protones, neutrones y electrones, y por qué las órbitas dibujadas son solo un modelo.'},
+ {id:'celula',title:'Célula vegetal',file:'celula.webp',caption:'Estructuras principales de una célula vegetal.',explain:'La pared celular da soporte; la membrana regula el intercambio de sustancias; el núcleo contiene ADN; los cloroplastos realizan la fotosíntesis; la vacuola central almacena sustancias y favorece la turgencia; las mitocondrias participan en la respiración celular.',question:'Explícame la función de los cloroplastos y la vacuola central en la célula vegetal.'}
+];
+let visualCurrent=visualTopics[0];
+function chooseVisual(item){
+ visualCurrent=item;
+ $('visualImage').src='imagenes/'+item.file;
+ $('visualImage').alt=item.caption;
+ $('visualCaption').textContent=item.caption;
+ $('visualExplanation').textContent=item.explain;
+ for(const b of $('visualTopics').querySelectorAll('button'))b.setAttribute('aria-pressed',String(b.dataset.topic===item.id));
+}
+for(const topic of visualTopics){
+ const b=document.createElement('button');b.type='button';b.textContent=topic.title;b.dataset.topic=topic.id;b.setAttribute('aria-pressed','false');b.onclick=()=>chooseVisual(topic);$('visualTopics').append(b);
+}
+chooseVisual(visualTopics[0]);
+$('toggleVisual').onclick=()=>{
+ const open=$('visualContent').classList.toggle('hidden')===false;
+ $('toggleVisual').setAttribute('aria-expanded',String(open));
+ $('toggleVisual').textContent=open?'Ocultar imágenes':'Explícame con una imagen';
+};
+$('readVisual').onclick=()=>speak(visualCurrent.explain);
+$('questionVisual').onclick=()=>{
+ $('message').value=visualCurrent.question;
+ $('message').focus();
+ note('Pregunta preparada. Revísala y pulsa Enviar cuando quieras.');
+};
 </script></body></html>
