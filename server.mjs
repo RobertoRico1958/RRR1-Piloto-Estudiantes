@@ -6,10 +6,12 @@ const PORT = Number(process.env.PORT || 3000);
 const HOST = process.env.HOST || '127.0.0.1';
 const CODES = (process.env.PILOT_CODES || '').split(',').map(x=>x.trim()).filter(Boolean);
 const DAILY_LIMIT = Math.min(200, Math.max(1, Number(process.env.DAILY_LIMIT || 50)));
-const IMAGE_DAILY_LIMIT = Math.min(30, Math.max(1, Number(process.env.IMAGE_DAILY_LIMIT || 10)));
+const IMAGE_DAILY_LIMIT = Math.min(30, Math.max(1, Number(process.env.IMAGE_DAILY_LIMIT || 3)));
+const IMAGE_MODEL = process.env.IMAGE_MODEL || 'gpt-image-2.5-flare';
 const usage = new Map();
 const imageUsage = new Map();
 const active = new Set();
+const activeImage = new Set();
 if (HOST === '0.0.0.0' && !CODES.length) {
   console.error('SEGURIDAD: configura PILOT_CODES antes de publicar 3RV1.');
   process.exit(1);
@@ -40,19 +42,40 @@ function checkImageQuota(code) {
     const e = new Error('Límite de imágenes alcanzado. Intenta más tarde o consulta a tu profesor.');
     e.status = 429; throw e;
   }
-  u.count++; u.times.push(now); imageUsage.set(key,u);
+}
+function markImageUsage(code) {
+  if (!CODES.length) return;
+  const date = new Date().toISOString().slice(0,10);
+  const key = 'img:' + date + ':' + code;
+  const u = imageUsage.get(key) || {count:0,times:[]};
+  const now=Date.now();
+  u.count++; u.times = u.times.filter(x=>x>now-60000); u.times.push(now);
+  imageUsage.set(key,u);
   if(imageUsage.size>2000){for(const k of imageUsage.keys())if(!k.startsWith('img:'+date+':'))imageUsage.delete(k);}
+}
+function imageAPIError(status, body) {
+  const code = String(body?.error?.code || body?.error?.type || '').slice(0,80);
+  console.error('Error OpenAI imágenes', { status, code });
+  let msg = 'No fue posible generar la imagen. Revisa los registros de Render.';
+  if (status === 401) msg = 'La clave API no fue aceptada por OpenAI. Consulta al administrador.';
+  else if (status === 403) msg = 'El proyecto de OpenAI no tiene permiso para generar imágenes. Revisa su acceso al modelo.';
+  else if (status === 429 && /quota|billing|credit|insufficient/i.test(code)) msg = 'No hay crédito suficiente para generar imágenes en OpenAI.';
+  else if (status === 429) msg = 'OpenAI está limitando temporalmente las solicitudes. Espera e intenta nuevamente.';
+  else if (status === 400 && /model|unsupported|invalid/i.test(code)) msg = 'El modelo de imágenes no está disponible para este proyecto. Revisa IMAGE_MODEL en Render.';
+  else if (status === 400) msg = 'OpenAI no aceptó esta solicitud de imagen. Intenta describir el tema de otra forma.';
+  const e = new Error(msg); e.status = (status === 429 ? 429 : 502); return e;
 }
 
 function buildImagePrompt(topic, subject='') {
   const area = subject || findSubject(topic) || 'Ciencias';
+  const level = /posgrado|maestr[ií]a|doctorado/i.test(topic) ? 'posgrado' : /licenciatura|universidad|universitario/i.test(topic) ? 'licenciatura' : /bachillerato|preparatoria|CCH/i.test(topic) ? 'bachillerato' : 'secundaria';
   const areaHints = {
     'Matemáticas': 'Si hay gráficas, muestra ejes cartesianos claros, etiquetas legibles, números visibles y relaciones matemáticas correctas. Si hay ecuaciones, escríbelas con notación matemática clara.',
     'Física': 'Incluye flechas, magnitudes, nombres de variables y la situación física de forma clara.',
     'Química': 'Incluye partículas, enlaces, símbolos o partes señaladas, con estructura clara y escolar.',
     'Biología': 'Incluye estructuras, organelos o partes etiquetadas con nombres visibles y diseño didáctico.'
   };
-  return `Crea una imagen educativa clara, didáctica y en español para estudiantes de secundaria o bachillerato sobre: ${topic}. Usa fondo claro, colores suaves, etiquetas legibles, composición ordenada y contenido científicamente correcto. ${areaHints[area] || 'Presenta el concepto con claridad y valor didáctico.'} No agregues marcas de agua.`;
+  return `Crea una imagen educativa clara, didáctica y en español para estudiantes de nivel ${level} sobre: ${topic}. Usa fondo claro, colores suaves, etiquetas legibles, composición ordenada y contenido científicamente correcto. ${areaHints[area] || 'Presenta el concepto con claridad y valor didáctico.'} Evita inventar números, fórmulas o datos. No agregues marcas de agua.`;
 }
 
 function buildImageMeta(topic, subject='') {
@@ -194,36 +217,47 @@ const server = http.createServer(async (req, res) => {
         raw += part;
         if (raw.length > 4000) return send(res, 413, { error: 'Solicitud demasiado larga' });
       }
-      const body = JSON.parse(raw || '{}');
+      let body;
+      try { body = JSON.parse(raw || '{}'); }
+      catch { return send(res, 400, { error: 'Solicitud inválida.' }); }
       const topic = String(body.prompt || '').trim();
-      if (!topic || topic.length > 220) return send(res, 400, { error: 'Escribe un tema o descripción de hasta 220 caracteres.' });
-      if (!KEY) return send(res, 503, { error: 'La clave API no está configurada en el servidor.' });
+      if (!topic || topic.length > 220) return send(res, 400, { error: 'Escribe un tema de hasta 220 caracteres.' });
+      if (!KEY) return send(res, 503, { error: 'La clave API no está configurada.' });
       const code = String(req.headers['x-pilot-code'] || '').trim();
-      if (!codeValid(code)) return send(res, 403, { error: 'Código incorrecto. Solicita uno a tu profesor.' });
+      if (!codeValid(code)) return send(res, 403, { error: 'Código de acceso incorrecto.' });
+      if (activeImage.has(code)) return send(res, 429, { error: 'Ya estás generando una imagen. Espera a que termine.' });
       checkImageQuota(code);
-      const session = getSession(body.sessionId, code);
-      const subject = session.subject || findSubject(topic) || '';
-      const prompt = buildImagePrompt(topic, subject);
-      let response;
+      activeImage.add(code);
       try {
-        response = await fetch('https://api.openai.com/v1/images/generations', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: 'gpt-image-1', prompt, size: '1024x1024' })
+        const session = getSession(body.sessionId, code);
+        const subject = findSubject(topic) || session.subject || '';
+        const prompt = buildImagePrompt(topic, subject);
+        let response;
+        try {
+          response = await fetch('https://api.openai.com/v1/images/generations', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: IMAGE_MODEL, prompt, size: '1024x1024', quality: 'low', output_format: 'webp' }),
+            signal: AbortSignal.timeout(120000)
+          });
+        } catch (error) {
+          const e = new Error(error?.name === 'TimeoutError' ? 'La imagen tardó demasiado. Intenta nuevamente.' : 'No se pudo conectar con OpenAI para generar la imagen.');
+          e.status = 504; throw e;
+        }
+        let payload;
+        try { payload = await response.json(); }
+        catch { const e=new Error('OpenAI respondió en un formato inesperado.'); e.status=502; throw e; }
+        if (!response.ok) throw imageAPIError(response.status, payload);
+        const b64 = payload.data?.[0]?.b64_json;
+        if (!b64) {const e = new Error('La API no entregó la imagen. Revisa los registros de Render.'); e.status=502; throw e;}
+        const meta = buildImageMeta(topic, subject);
+        markImageUsage(code);
+        return send(res, 200, {
+          imageUrl: `data:image/webp;base64,${b64}`,
+          alt: meta.title,
+          ...meta
         });
-      } catch {
-        throw new Error('No se pudo conectar con OpenAI para generar la imagen.');
-      }
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error?.message || `Error API ${response.status}`);
-      const b64 = payload.data?.[0]?.b64_json || payload.data?.[0]?.b64Json;
-      if (!b64) throw new Error('No se recibió la imagen generada.');
-      const meta = buildImageMeta(topic, subject);
-      return send(res, 200, {
-        imageUrl: `data:image/png;base64,${b64}`,
-        alt: meta.title,
-        ...meta
-      });
+      } finally { activeImage.delete(code); }
     }
     if (req.method === 'POST' && url.pathname === '/chat') {
       let raw = '';
