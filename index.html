@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>3RV1 | Tutor de Matemáticas, Física, Química y Biología</title>
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['\\(', '\\)'], ['$', '$']], displayMath: [['\\[', '\\]'], ['$$', '$$']], processEscapes: true },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] },
+  startup: { typeset: false }
+};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 <style>
 :root{color-scheme:dark;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#071827;color:#eaf6ff}*{box-sizing:border-box}body{margin:0;padding:18px}main{max-width:850px;margin:auto}header{display:flex;gap:14px;align-items:center;margin:14px 0 20px}.mark{display:grid;place-items:center;width:56px;height:56px;border-radius:17px;background:#1a455e;font-size:30px}h1{font-size:1.6rem;margin:0}small,.hint{color:#bad0dc}.card{background:#112b41;border:1px solid #315572;border-radius:17px;padding:20px;margin-bottom:14px}.row{display:flex;gap:9px;flex-wrap:wrap;align-items:center}.spread{justify-content:space-between}button{border:0;border-radius:10px;background:#30d6b3;color:#082825;font-weight:750;padding:12px 15px;cursor:pointer}button.alt{background:#315975;color:#fff}button:disabled{opacity:.55;cursor:not-allowed}input[type=text],input[type=password]{min-width:0;width:100%;border:1px solid #567e98;border-radius:10px;background:#071c2b;color:white;padding:13px;font:inherit}form{display:flex;gap:8px}form input{flex:1}#chat{height:min(51vh,410px);min-height:250px;overflow:auto;display:flex;flex-direction:column;gap:10px;padding:12px 1px}.bubble{max-width:88%;padding:12px 15px;line-height:1.5;white-space:pre-wrap;border-radius:15px}.bot{align-self:flex-start;background:#245069}.user{align-self:flex-end;background:#236454}.status{background:#163d53;padding:10px 12px;border-radius:10px;margin:12px 0;font-size:.92rem}.hidden{display:none!important}label{display:flex;align-items:center;gap:8px}.minor{font-size:.84rem;color:#b9d1df}a{color:#80e2d0}@media(max-width:500px){body{padding:10px}.card{padding:14px}form{flex-direction:column}form button{width:100%}}
 
@@ -15,8 +23,12 @@
 .visualFigure{margin:12px 0 0}.visualFigure img{display:block;width:100%;height:auto;max-height:560px;object-fit:contain;border-radius:12px;background:#f7fbff}
 .visualExplanation{margin:10px 0;line-height:1.55}.visualActions{display:flex;gap:8px;flex-wrap:wrap}
 .visualNotice{color:#bad0dc;font-size:.83rem}
+/* Las ecuaciones conservan su tamaño y pueden desplazarse en pantallas pequeñas. */
+.bubble{overflow-wrap:anywhere}.bubble mjx-container{max-width:100%;overflow-x:auto;overflow-y:hidden;padding:3px 0}
+.mathHint{font-size:.8rem;color:#bad0dc;margin:5px 0}
 .generatedSection{margin-top:16px;padding-top:14px;border-top:1px dashed #40627d}
 .generatedRow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}.generatedRow input{flex:1;min-width:230px}.generatedCard{margin-top:12px}.generatedCard img{display:block;width:100%;height:auto;max-height:560px;object-fit:contain;border-radius:12px;background:#f7fbff}
+.calculusPanel{margin-top:15px;padding:13px;border:1px solid #315572;border-radius:12px}.calculusPanel h3{margin:0 0 8px;font-size:1.08rem}
 </style>
 </head>
 <body><main>
@@ -31,6 +43,7 @@
 <div class="row spread"><strong>Tu conversación con 3RV1</strong><button class="alt" id="newChat" type="button">↻ Nueva conversación</button></div>
 <p class="hint">Puedes hablar o escribir. 3RV1 dará explicaciones breves y hará una pregunta a la vez.</p>
 <div id="chat" role="log" aria-live="polite" aria-label="Conversación"><div class="bubble bot">¡Bienvenido! Pulsa «Comenzar» y me presentaré.</div></div>
+<p class="mathHint">Las ecuaciones se muestran con notación matemática cuando hay conexión a internet.</p>
 <div class="status" id="status" role="status">Listo para comenzar.</div>
 <div class="row"><button id="start" type="button">▶ Comenzar</button><button class="alt" id="mic" type="button">🎤 Iniciar dictado</button><button class="alt" id="stop" type="button">🔇 Silenciar</button></div>
 <form id="chatForm" style="margin-top:12px"><input id="message" type="text" maxlength="1500" placeholder="Escribe tu mensaje..." autocomplete="off" aria-label="Mensaje al tutor"><button id="send">Enviar</button></form>
@@ -38,6 +51,16 @@
 <p class="minor">El dictado utiliza la función de reconocimiento de voz del navegador, si está disponible; revisa el texto antes de enviarlo. Algunas implementaciones pueden procesar la voz en servicios externos.</p>
 <label class="minor"><input id="tts" type="checkbox" checked> Leer las respuestas en voz alta</label>
 <p class="minor">3RV1 es un apoyo educativo independiente. No sustituye a un docente ni emite certificados oficiales. Evita compartir contraseñas o datos personales sensibles.</p>
+
+<div class="calculusPanel">
+ <h3>∫ Derivadas e integrales</h3>
+ <p class="minor">Ejemplos de notación para explorar con 3RV1. Selecciona uno y pulsa «Enviar» para recibir una explicación guiada.</p>
+ <div class="row" id="calculusExamples">
+  <button type="button" class="alt" data-calculus="Explícame paso a paso la derivada de f(x)=x^3+2x y qué significa su pendiente.">Derivadas</button>
+  <button type="button" class="alt" data-calculus="Explícame paso a paso cómo resolver la integral indefinida de x^2 respecto a x y por qué aparece la constante C.">Integral indefinida</button>
+  <button type="button" class="alt" data-calculus="Explícame la integral definida de x^2 entre 0 y 2, cómo se calcula y qué área representa.">Integral definida</button>
+ </div>
+</div>
 
 <div class="visualLibrary">
  <div class="row spread"><h3>🖼️ Biblioteca visual de 3RV1</h3><button id="toggleVisual" class="alt" type="button" aria-expanded="false" aria-controls="visualContent">Explícame con una imagen</button></div>
@@ -53,7 +76,7 @@
   <h3>🎨 Generar una imagen nueva</h3>
   <p class="minor">Escribe el tema que quieres visualizar o deja una pregunta en el cuadro del mensaje. 3RV1 intentará crear una ilustración educativa original para complementar tu aprendizaje.</p>
   <div class="generatedRow"><input id="imagePrompt" type="text" maxlength="220" placeholder="Ejemplo: parábola con vértice y raíces, o célula animal con organelos" aria-label="Tema de la imagen"><button id="generateImage" type="button">Generar imagen</button></div>
-  <p class="minor">Límites sugeridos del piloto: hasta 10 imágenes al día por estudiante. Procura pedir temas claros y específicos.</p>
+  <p class="minor">Límite inicial del piloto: hasta 3 imágenes al día por estudiante. Procura pedir temas claros y específicos.</p>
   <div id="generatedCard" class="generatedCard hidden"><figure class="visualFigure"><img id="generatedImage" alt=""><figcaption class="minor" id="generatedCaption"></figcaption></figure><p class="visualExplanation" id="generatedExplanation"></p><div class="visualActions"><button id="readGenerated" class="alt" type="button">🔊 Leer explicación</button><button id="questionGenerated" class="alt" type="button">❓ Preguntar sobre esta imagen</button></div></div>
  </div>
 </div>
@@ -65,12 +88,72 @@ const $=x=>document.getElementById(x);
 let sessionId=null, busy=false, started=false, accessCode='';
 const chat=$('chat');
 function note(t){$('status').textContent=t;}
-function bubble(t,who='bot') {const e=document.createElement('div');e.className='bubble '+who;e.textContent=(who==='bot'?'3RV1: ':'Tú: ')+t;chat.append(e);chat.scrollTop=chat.scrollHeight;}
+// Presentar fórmulas en forma tipográfica sin cambiar el texto que usa la voz.
+// Reconoce LaTeX delimitado y expresiones habituales en texto como x^2 + 5x + 6 = 0.
+const mathTerm=String.raw`(?:\\frac\{[^{}]+\}\{[^{}]+\}|\\sqrt\{[^{}]+\}|√\s*(?:\d+|[a-zA-Z]|\([^()]+\))|(?:\d+(?:[.,]\d+)?|[a-zA-Z])(?:\^\{?-?\d+\}?|[²³])?(?:[a-zA-Z])?)`;
+const mathOperators=String.raw`[+−\-*/×÷=<>≤≥±]`;
+const mathPattern=new RegExp(`${mathTerm}(?:\\s*${mathOperators}\\s*${mathTerm})+|(?:[a-zA-Z](?:\\^\\{?-?\\d+\\}?|[²³]))`, 'g');
+function toTeX(s){
+  return s.replace(/√\s*(\d+|[a-zA-Z])/g,'\\sqrt{$1}')
+    .replace(/\^\{?(-?\d+)\}?/g,'^{$1}')
+    .replace(/²/g,'^{2}').replace(/³/g,'^{3}')
+    .replace(/×/g,' \\times ').replace(/÷/g,' \\div ')
+    .replace(/≤/g,' \\leq ').replace(/≥/g,' \\geq ')
+    .replace(/±/g,' \\pm ').replace(/−/g,'-')
+    .replace(/(\d)\s*\/\s*(\d)/g,'\\frac{$1}{$2}');
+}
+function formatMathText(raw){
+  // Respetar fórmulas con delimitadores LaTeX ya proporcionados por 3RV1.
+  return String(raw).split(/(\\\([\s\S]*?\\\)|\\\[[\s\S]*?\\\]|\$\$[\s\S]*?\$\$|\$[^$\n]+\$)/g)
+    .map((part,i)=>i%2 ? part : part.replace(mathPattern, match=>{
+      // Evitar reemplazos casuales de texto ordinario.
+      if(!/[\^²³=+−*/×÷<>≤≥±]|\\frac|\\sqrt|√/.test(match))return match;
+      return '\\(' + toTeX(match) + '\\)';
+    })).join('');
+}
+function typesetBubble(e){
+  if(window.MathJax?.typesetPromise){
+    window.MathJax.typesetPromise([e]).catch(err=>console.warn('Ecuación sin formato',err));
+  }
+}
+function bubble(t,who='bot'){
+  const e=document.createElement('div');e.className='bubble '+who;
+  // textContent impide que mensajes arbitrarios se interpreten como HTML.
+  e.textContent=(who==='bot'?'3RV1: ':'Tú: ')+formatMathText(t);
+  e.dataset.originalText=(who==='bot'?'3RV1: ':'Tú: ')+t;
+  chat.append(e);chat.scrollTop=chat.scrollHeight;typesetBubble(e);
+}
+// Si MathJax termina de cargar después del primer mensaje, renderizar los pendientes.
+window.addEventListener('load',()=>{
+  if(window.MathJax?.startup?.promise){
+    window.MathJax.startup.promise.then(()=>{
+      const nodes=[...chat.querySelectorAll('.bubble')];
+      if(nodes.length)window.MathJax.typesetPromise(nodes).catch(()=>{});
+    });
+  }
+});
 function speechVoice(){const voices=window.speechSynthesis?.getVoices()||[];return voices.find(v=>v.lang.toLowerCase()==='es-mx')||voices.find(v=>v.lang.toLowerCase().startsWith('es'))||null;}
 // Conversión de notación matemática a lenguaje oral, solo para el sintetizador.
 // No modifica el texto que ve el alumno ni las expresiones enviadas al tutor.
 function mathForSpeech(input){
   let t=String(input||'');
+  // Derivadas, integrales definidas e indefinidas: lectura oral en español.
+  // Convertimos antes de procesar fracciones y potencias.
+  t=t.replace(/\\\[|\\\]|\\\(|\\\)|\$\$/g,' ');
+  t=t.replace(/\\int\s*_\s*\{?([^{}\s^]+)\}?\s*\^\s*\{?([^{}\s]+)\}?\s*([^\n;]*?)\s*\\?,?\s*d([a-zA-Z])\b/g,
+    (_,a,b,expr,v)=>`integral definida desde ${a} hasta ${b} de ${expr} respecto de ${v}`);
+  t=t.replace(/∫\s*_?\s*\{?([\d.-]+)\}?\s*\^\s*\{?([\d.-]+)\}?\s*([^\n;]*?)\s*d([a-zA-Z])\b/g,
+    (_,a,b,expr,v)=>`integral definida desde ${a} hasta ${b} de ${expr} respecto de ${v}`);
+  t=t.replace(/(?:\\int|∫)\s*([^\n;]*?)\s*\\?,?\s*d([a-zA-Z])\b/g,
+    (_,expr,v)=>`integral de ${expr} respecto de ${v}`);
+  t=t.replace(/\\frac\s*\{d\}\s*\{d([a-zA-Z])\}/g,(_,v)=>`derivada con respecto a ${v}`);
+  t=t.replace(/\\frac\s*\{d\s*([a-zA-Z])\}\s*\{d\s*([a-zA-Z])\}/g,(_,f,v)=>`derivada de ${f} con respecto a ${v}`);
+  t=t.replace(/d\s*([a-zA-Z])\s*\/\s*d\s*([a-zA-Z])/g,(_,f,v)=>`derivada de ${f} respecto de ${v}`);
+  t=t.replace(/\\frac\s*\{d\^\{?(\d+)\}?\s*([a-zA-Z])\}\s*\{d([a-zA-Z])\^\{?\1\}?\}/g,(_,n,f,v)=>`derivada de orden ${n} de ${f} respecto de ${v}`);
+  t=t.replace(/([a-zA-Z])\s*'{1,2}/g,(_,f)=>`derivada de ${f}`);
+  t=t.replace(/\\(?:partial)\b/g,' derivada parcial ');
+  t=t.replace(/\\(?:lim)\s*_\s*\{?([^{}\s]+)\s*\\to\s*([^{}\s]+)\}?/g,(_,v,k)=>`límite cuando ${v} tiende a ${k}`);
+  t=t.replace(/\\(?:to|rightarrow)\b/g,' tiende a ');
   // LaTeX común: \frac{a}{b}, \sqrt{x}, \cdot, \times, \pi.
   t=t.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g,(_,a,b)=>`${a} dividido entre ${b}`);
   t=t.replace(/\\sqrt\s*\{([^{}]+)\}/g,(_,a)=>`raíz cuadrada de ${a}`);
@@ -110,7 +193,7 @@ function wait(value){busy=value;for(const id of ['start','mic','send','newChat']
 async function sendMessage(text){if(busy)return;const msg=text.trim();if(!msg)return;if(!started){started=true;$('start').textContent='🔊 Repetir respuesta';}bubble(msg,'user');$('message').value='';wait(true);
 try{const response=await fetch('/chat',{method:'POST',headers:{'Content-Type':'application/json','X-Pilot-Code':accessCode},body:JSON.stringify({sessionId,message:msg})});const data=await response.json();if(!response.ok)throw new Error(data.error||'No fue posible conectar con el tutor.');sessionId=data.sessionId;bubble(data.reply);speak(data.reply);$('start').textContent='🔊 Repetir respuesta';}catch(error){bubble('Aviso técnico: '+error.message);note('Revisa el servidor o tu código de acceso.');}finally{wait(false);$('message').focus();}}
 $('accessForm').onsubmit=async e=>{e.preventDefault();accessCode=$('pilotCode').value.trim();$('accessNotice').textContent='Verificando acceso…';try{const r=await fetch('/access',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:accessCode})});const j=await r.json();if(!r.ok)throw new Error(j.error||'No se pudo validar el acceso');$('accessPanel').classList.add('hidden');$('tutorPanel').classList.remove('hidden');$('accessNotice').textContent='';$('start').focus();}catch(err){$('accessNotice').textContent=err.message;}};
-$('start').onclick=()=>{if(!started){chat.textContent='';sendMessage('Hola 3RV1');}else{const messages=[...chat.querySelectorAll('.bot')];if(messages.length)speak(messages.at(-1).textContent.replace(/^3RV1: /,''));}};
+$('start').onclick=()=>{if(!started){chat.textContent='';sendMessage('Hola 3RV1');}else{const messages=[...chat.querySelectorAll('.bot')];if(messages.length)speak(messages.at(-1).dataset.originalText?.replace(/^3RV1: /,'')||'');}};
 $('newChat').onclick=()=>{stopDictation();if('speechSynthesis' in window)speechSynthesis.cancel();sessionId=null;started=false;chat.innerHTML='';bubble('¡Bienvenido! Pulsa «Comenzar» y me presentaré.');$('start').textContent='▶ Comenzar';note('Conversación nueva.');};
 $('stop').onclick=()=>{if('speechSynthesis' in window)speechSynthesis.cancel();note('Audio detenido.');};
 $('chatForm').onsubmit=e=>{e.preventDefault();stopDictation();sendMessage($('message').value);};
@@ -219,7 +302,6 @@ $('toggleVisual').onclick=()=>{
  $('toggleVisual').textContent=open?'Ocultar imágenes':'Explícame con una imagen';
 };
 $('readVisual').onclick=()=>speak(visualCurrent.explain);
-
 $('questionVisual').onclick=()=>{
  $('message').value=visualCurrent.question;
  $('message').focus();
@@ -274,4 +356,5 @@ $('questionGenerated').onclick=()=>{
  $('message').focus();
  note('Pregunta preparada. Revísala y pulsa Enviar cuando quieras.');
 };
+document.querySelectorAll('[data-calculus]').forEach(btn=>{btn.addEventListener('click',()=>{ $('message').value=btn.dataset.calculus; $('message').focus(); note('Pregunta preparada. Pulsa Enviar para que 3RV1 te explique.'); });});
 </script></body></html>
